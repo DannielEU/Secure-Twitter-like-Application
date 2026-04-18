@@ -1,0 +1,15 @@
+target/
+.git/
+.idea/
+.vscode/
+
+node_modules/
+frontend/node_modules/
+frontend/dist/
+microservices/node_modules/
+
+.aws-sam/
+
+*.log
+*.iml
+.env

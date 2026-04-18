@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tdse-backend
+    ports:
+      - "8080:8080"
+    environment:
+      AUTH0_ISSUER_URI: ${AUTH0_ISSUER_URI:-https://YOUR-DOMAIN.auth0.com/}
+      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE:-https://api.example.com/twitter}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      PORT: 8080
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_AUTH0_DOMAIN: ${VITE_AUTH0_DOMAIN:-your-tenant.us.auth0.com}
+        VITE_AUTH0_CLIENT_ID: ${VITE_AUTH0_CLIENT_ID:-your-spa-client-id}
+        VITE_AUTH0_AUDIENCE: ${VITE_AUTH0_AUDIENCE:-https://api.example.com/twitter}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    container_name: tdse-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"

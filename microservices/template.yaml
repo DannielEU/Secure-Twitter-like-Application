@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Secure Twitter-like microservices on AWS Lambda
+
+Parameters:
+  Auth0IssuerUri:
+    Type: String
+    Description: Auth0 issuer URI (example: https://tenant.us.auth0.com/)
+  Auth0Audience:
+    Type: String
+    Description: Auth0 API audience for backend access tokens
+  CorsAllowOrigin:
+    Type: String
+    Default: '*'
+    Description: Allowed frontend origin for CORS
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Environment:
+      Variables:
+        AUTH0_ISSUER_URI: !Ref Auth0IssuerUri
+        AUTH0_AUDIENCE: !Ref Auth0Audience
+        CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
+
+Resources:
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowHeaders:
+          - Authorization
+          - Content-Type
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowOrigins:
+          - !Ref CorsAllowOrigin
+
+  PostsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: tdse-posts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  CreatePostFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: posts-service/handler.createPost
+      Environment:
+        Variables:
+          POSTS_TABLE: !Ref PostsTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PostsTable
+      Events:
+        CreatePost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/posts
+            Method: POST
+
+  ListPostsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: posts-service/handler.listPosts
+      Environment:
+        Variables:
+          POSTS_TABLE: !Ref PostsTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref PostsTable
+      Events:
+        ListPosts:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/posts
+            Method: GET
+
+  StreamFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: stream-service/handler.getStream
+      Environment:
+        Variables:
+          POSTS_TABLE: !Ref PostsTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref PostsTable
+      Events:
+        GetStream:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/stream
+            Method: GET
+
+  UserProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: user-service/handler.getMe
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Events:
+        GetMe:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /api/me
+            Method: GET
+
+Outputs:
+  HttpApiUrl:
+    Description: Base URL for the HTTP API
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+  PostsTableName:
+    Description: DynamoDB table storing posts
+    Value: !Ref PostsTable

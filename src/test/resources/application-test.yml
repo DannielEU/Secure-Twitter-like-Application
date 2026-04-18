@@ -1,0 +1,12 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://example.auth0.com/
+
+app:
+  security:
+    audience: https://api.example.com/twitter
+  cors:
+    allowed-origins: http://localhost:5173
