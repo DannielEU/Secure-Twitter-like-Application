@@ -5,14 +5,14 @@ Description: Secure Twitter-like microservices on AWS Lambda
 Parameters:
   Auth0IssuerUri:
     Type: String
-    Description: Auth0 issuer URI (example: https://tenant.us.auth0.com/)
+    Description: "Auth0 issuer URI"
   Auth0Audience:
     Type: String
-    Description: Auth0 API audience for backend access tokens
+    Description: "Auth0 API audience for backend access tokens"
   CorsAllowOrigin:
     Type: String
     Default: '*'
-    Description: Allowed frontend origin for CORS
+    Description: "Allowed frontend origin for CORS"
 
 Globals:
   Function:
@@ -26,6 +26,17 @@ Globals:
         CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
 
 Resources:
+  Auth0AuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: shared/authorizer.handler
+      Environment:
+        Variables:
+          AUTH0_ISSUER_URI: !Ref Auth0IssuerUri
+          AUTH0_AUDIENCE: !Ref Auth0Audience
+      Role: arn:aws:iam::674287765737:role/LabRole
+
   HttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -39,6 +50,16 @@ Resources:
           - OPTIONS
         AllowOrigins:
           - !Ref CorsAllowOrigin
+      Auth:
+        Authorizers:
+          Auth0Authorizer:
+            FunctionArn: !GetAtt Auth0AuthorizerFunction.Arn
+            Identity:
+              Headers:
+                - Authorization
+            AuthorizerPayloadFormatVersion: 2.0
+            EnableSimpleResponses: true
+            Type: REQUEST
 
   PostsTable:
     Type: AWS::DynamoDB::Table
@@ -60,10 +81,7 @@ Resources:
       Environment:
         Variables:
           POSTS_TABLE: !Ref PostsTable
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PostsTable
+      Role: arn:aws:iam::674287765737:role/LabRole
       Events:
         CreatePost:
           Type: HttpApi
@@ -71,6 +89,8 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /api/posts
             Method: POST
+            Auth:
+              Authorizer: Auth0Authorizer
 
   ListPostsFunction:
     Type: AWS::Serverless::Function
@@ -80,10 +100,7 @@ Resources:
       Environment:
         Variables:
           POSTS_TABLE: !Ref PostsTable
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - DynamoDBReadPolicy:
-            TableName: !Ref PostsTable
+      Role: arn:aws:iam::674287765737:role/LabRole
       Events:
         ListPosts:
           Type: HttpApi
@@ -100,10 +117,7 @@ Resources:
       Environment:
         Variables:
           POSTS_TABLE: !Ref PostsTable
-      Policies:
-        - AWSLambdaBasicExecutionRole
-        - DynamoDBReadPolicy:
-            TableName: !Ref PostsTable
+      Role: arn:aws:iam::674287765737:role/LabRole
       Events:
         GetStream:
           Type: HttpApi
@@ -117,8 +131,7 @@ Resources:
     Properties:
       CodeUri: .
       Handler: user-service/handler.getMe
-      Policies:
-        - AWSLambdaBasicExecutionRole
+      Role: arn:aws:iam::674287765737:role/LabRole
       Events:
         GetMe:
           Type: HttpApi
@@ -126,11 +139,13 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /api/me
             Method: GET
+            Auth:
+              Authorizer: Auth0Authorizer
 
 Outputs:
   HttpApiUrl:
-    Description: Base URL for the HTTP API
+    Description: "Base URL for the HTTP API"
     Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
   PostsTableName:
-    Description: DynamoDB table storing posts
+    Description: "DynamoDB table storing posts"
     Value: !Ref PostsTable

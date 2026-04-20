@@ -256,6 +256,52 @@ The `microservices/` folder contains a serverless split into three services:
 
 ## Deploy with AWS SAM
 
+## Steps before deploy
+
+- Get ready Sam intalling this file from github:
+- https://github.com/awslabs/aws-sam-cli/releases/latest
+- AWS_SAM_CLI_64_PY3.msi
+- Start the .msi file
+
+## Configuration for AWS CLI
+- We need to configure the aws key and token 
+- ![img.png](img/img.png)
+
+- We have to take into account the domain of auth0 tht we have
+- ![img_1.png](img/img_1.png)
+
+- Now let's start with the deploy with this comand in the microservices directory
+- sam Deploy
+
+- ![img_2.png](img/img_2.png)
+- ![img_3.png](img/img_3.png)
+- ![img_4.png](img/img_4.png)
+- 
+- It already it's over and now we have to save this link that's the result of deploy:
+- https://52ex4uquql.execute-api.us-east-1.amazonaws.com
+
+![img.png](img/img_6.png)
+
+## Front S3 and as a AUTH0 CLient
+
+- Before the front correct deploy we have to configure with the client of our AUTH0
+- ![img_5.png](img/img_5.png)
+
+- We build with npm
+- ![img_6.png](src/img_6.png)
+
+- We create and configure the S3
+- ![img_7.png](src/img_7.png)
+
+- We have to allow the front to callback
+- ![img_8.png](src/img_8.png)
+
+- Don't forget to configure the S3 permission
+- ![img_9.png](src/img_9.png)
+- ![img_10.png](src/img_10.png)
+
+
+
 ```bash
 cd microservices
 npm install
@@ -274,6 +320,8 @@ After deployment, update frontend API base URL:
 ```dotenv
 VITE_API_BASE_URL=https://YOUR_API_ID.execute-api.YOUR_REGION.amazonaws.com
 ```
+
+
 
 ## Testing Report
 
