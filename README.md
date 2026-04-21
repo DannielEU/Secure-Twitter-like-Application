@@ -301,6 +301,25 @@ The `microservices/` folder contains a serverless split into three services:
 - ![img_10.png](src/img_10.png)
 
 
+- Now we have to create the api before prove the front
+- ![img.png](img.png)
+- ![img_1.png](img_1.png)
+- ![img_2.png](img_2.png)
+
+- Now we prove creating two users and loging with them
+- ![img_5.png](img_5.png)
+- We verify if it rejects the wrong password
+- ![img_6.png](img_6.png)
+- Now we login to prove and its everything right
+- ![img_7.png](img_7.png)
+- And at the end we prove the google login with other user
+- ![img_8.png](img_8.png)
+- ![img_9.png](img_9.png)
+- And it's working right
+- ![img_10.png](img_10.png)
+
+
+
 
 ```bash
 cd microservices
